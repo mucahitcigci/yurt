@@ -1,0 +1,136 @@
+<?php
+session_start();
+?>
+
+<!DOCTYPE html>
+<html lang="tr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Marmara Öğrenci Yurdu - Arama</title>
+        <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v5.15.3/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Muli:400,400i,800,800i" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+    </head>
+    <body id="page-top">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top" id="sideNav">
+            <a class="navbar-brand js-scroll-trigger" href="#page-top">
+                <span class="d-block d-lg-none">Clarence Taylor</span>
+                <span class="d-none d-lg-block"><img class="img-fluid img-profile rounded-circle mx-auto mb-2" src="assets/img/profile.jpg" alt="..." /></span>
+            </a>
+
+        <?php
+        include "inc/menu.include.php";
+         ?>
+        </nav>
+        <!-- Page Content-->
+        <main class="container p-0" style="margin: 10px 10px;">
+
+            <h2>Marmara Öğrenci Yurdu</h2>
+            <h3> Arama Sonuçları <h3>
+              <p style="font-size: 18px;"> Aranan İfade : "<?php echo htmlentities($_GET["ifade"]); ?>"</p>
+              <?php
+              // Veri tabanına Bağlan
+                include "inc/vt.include.php";
+
+              // sql hazırla
+              $araifade = $_GET["ifade"];
+              $araifade2 = "%".$araifade."%";
+
+              $sql = "select count(*) as ogrencisayisi from ogrenci where ad like :ifade or soyad like :ifade";
+              $ifade = $vt->prepare($sql);
+              $sonuc = $ifade->execute(Array("ifade"=>$araifade2));
+              // Sorgu çalışırken hata olduysa
+              if ($sonuc == false) {
+                $_SESSION["mesaj"] == "Bir hata oluştu!";
+                header("ogrenci.php");
+                exit;
+              }
+              // Tabloda öğrenci var mı?
+              $ogrencisayisisonuc = $ifade->fetch(PDO::FETCH_ASSOC);
+              if ($ogrencisayisisonuc["ogrencisayisi"] == 0) {
+                echo "Aradığınız kriterlere uyan öğrenci bulunmamaktadır!";
+                exit;
+              }
+
+              // sorguyu çalıştıracağız
+              $sql = "select * from ogrenci where ad like :ifade or soyad like :ifade";
+              $ifade = $vt->prepare($sql);
+              $sonuc = $ifade->execute(Array("ifade"=>$araifade2));
+              // Sorgu çalışırken hata olduysa
+              if ($sonuc == false) {
+                $_SESSION["mesaj"] == "Bir hata oluştu!";
+                header("ogrenci.php");
+                exit;
+              }
+              if (isset($_SESSION["mesaj"])) { ?>
+               <div id="mesaj" style="color: green; text-align: center;">
+                 <?php
+                   echo $_SESSION["mesaj"];
+                   unset($_SESSION["mesaj"]);
+                 ?>
+               </div>
+             <?php } ?>
+              <table border=1 style="font-size: 14px; font-family: sans-serif;">
+                <tr>
+                  <td> Numara </td>
+                  <td> Ad </td>
+                  <td> Soyad </td>
+                  <td> Telefon </td>
+                  <td> İşlem </td>
+                  <td> Detay </td>
+                <tr>
+                <?php
+                while ($sonuclistesi = $ifade->fetch(PDO::FETCH_ASSOC)) {
+                    echo "<tr>
+                      <td>";
+                    echo $sonuclistesi['numara'];
+                    echo "</td>
+                      <td>";
+                    echo $sonuclistesi["ad"];
+                    echo "</td>
+                      <td>";
+                    echo $sonuclistesi["soyad"];
+                    echo "</td>
+                          <td>";
+                    echo $sonuclistesi["telefon"];
+                    echo "</td>";
+                      echo "<td>".PHP_EOL;
+                        echo "<form method='POST' action='ogrencisil.php'>";
+                        echo "<input type='hidden' name='kod' value='";
+                        echo $sonuclistesi["kod"];
+                        echo "'>";
+                        echo "<input type='submit' value='Sil' style='display: inline; width: 60px;'>";
+                        echo "</form>".PHP_EOL;
+                      echo "</td>";
+                      $adres = "ogrencigor.php?kod=";
+                      $adres = $adres.$sonuclistesi["kod"];
+                      echo "<td>";
+                      echo "<a href='$adres'>Gör</a>";
+                      echo "</td>";
+                    echo "</tr>";
+                  }
+                ?>
+              </table>
+              <?php
+              // gelen verileri göstereceğiz
+
+              ?>
+       </main>
+        <!-- Bootstrap core JS-->
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Third party plugin JS-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+</html>
